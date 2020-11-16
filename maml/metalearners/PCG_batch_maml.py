@@ -118,10 +118,7 @@ class ModelAgnosticMetaLearning_1(object):
 
         mean_outer_loss = torch.tensor(0., device=self.device)
 
-        import pdb
-        pdb.set_trace()
         mean_outer_losses = []
-
 
         for task_id, (train_inputs, train_targets, test_inputs, test_targets) \
                 in enumerate(zip(*batch['train'], *batch['test'])):
@@ -136,7 +133,6 @@ class ModelAgnosticMetaLearning_1(object):
 
             with torch.set_grad_enabled(self.model.training):
                 test_logits = self.model(test_inputs, params=params)
-                pdb.set_trace()
                 outer_loss = self.loss_function(test_logits, test_targets)
                 results['outer_losses'][task_id] = outer_loss.item()
                 mean_outer_loss += outer_loss
