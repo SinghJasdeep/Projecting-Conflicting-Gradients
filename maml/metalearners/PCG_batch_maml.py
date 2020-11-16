@@ -7,10 +7,10 @@ from collections import OrderedDict
 from torchmeta.utils import gradient_update_parameters
 from maml.utils import tensors_to_device, compute_accuracy
 
-__all__ = ['ModelAgnosticMetaLearning', 'MAML', 'FOMAML']
+__all__ = ['ModelAgnosticMetaLearning_1', 'MAML', 'FOMAML']
 
 
-class ModelAgnosticMetaLearning(object):
+class ModelAgnosticMetaLearning_1(object):
     """Meta-learner class for Model-Agnostic Meta-Learning [1].
 
     Parameters
@@ -117,6 +117,12 @@ class ModelAgnosticMetaLearning(object):
             })
 
         mean_outer_loss = torch.tensor(0., device=self.device)
+
+        import pdb
+        pdb.set_trace()
+        mean_outer_losses = []
+
+
         for task_id, (train_inputs, train_targets, test_inputs, test_targets) \
                 in enumerate(zip(*batch['train'], *batch['test'])):
             params, adaptation_results = self.adapt(train_inputs, train_targets,
@@ -133,6 +139,7 @@ class ModelAgnosticMetaLearning(object):
                 outer_loss = self.loss_function(test_logits, test_targets)
                 results['outer_losses'][task_id] = outer_loss.item()
                 mean_outer_loss += outer_loss
+                mean_outer_losses.add(outer_loss)
 
             if is_classification_task:
                 results['accuracies_after'][task_id] = compute_accuracy(
@@ -141,7 +148,7 @@ class ModelAgnosticMetaLearning(object):
         mean_outer_loss.div_(num_tasks)
         results['mean_outer_loss'] = mean_outer_loss.item()
 
-        return mean_outer_loss, results
+        return mean_outer_loss, results, mean_outer_losses
 
     def adapt(self, inputs, targets, is_classification_task=None,
               num_adaptation_steps=1, step_size=0.1, first_order=False):
@@ -197,11 +204,13 @@ class ModelAgnosticMetaLearning(object):
                 self.optimizer.zero_grad()
 
                 batch = tensors_to_device(batch, device=self.device)
-                outer_loss, results = self.get_outer_loss(batch)
+                outer_loss, results, outer_losses = self.get_outer_loss(batch)
                 yield results
 
-                outer_loss.backward()
-                self.optimizer.step()
+                # outer_loss.backward()
+                # self.optimizer.step()
+                self.optimizer.pc_backward(outer_losses) # calculate the gradient can apply gradient modification
+                self.optimizer.step()  # apply gradient step
 
                 num_batches += 1
 
@@ -235,7 +244,7 @@ class ModelAgnosticMetaLearning(object):
                     break
 
                 batch = tensors_to_device(batch, device=self.device)
-                _, results = self.get_outer_loss(batch)
+                _, results ,__ = self.get_outer_loss(batch)
                 yield results
 
                 num_batches += 1

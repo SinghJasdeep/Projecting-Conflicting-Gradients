@@ -67,6 +67,7 @@ def main(args):
 
     # Training loop
     epoch_desc = 'Epoch {{0: <{0}d}}'.format(1 + int(math.log10(args.num_epochs)))
+    all_results = []
     for epoch in range(args.num_epochs):
         metalearner.train(meta_train_dataloader,
                           max_batches=args.num_batches,
@@ -77,6 +78,8 @@ def main(args):
                                        max_batches=args.num_batches,
                                        verbose=args.verbose,
                                        desc=epoch_desc.format(epoch + 1))
+        print(results['accuracies_after'])
+        all_results.add(results['accuracies_after'])
 
         # Save best model
         if 'accuracies_after' in results:
@@ -92,6 +95,7 @@ def main(args):
         if save_model and (args.output_folder is not None):
             with open(args.model_path, 'wb') as f:
                 torch.save(benchmark.model.state_dict(), f)
+    print(all_results)
 
     if hasattr(benchmark.meta_train_dataset, 'close'):
         benchmark.meta_train_dataset.close()
