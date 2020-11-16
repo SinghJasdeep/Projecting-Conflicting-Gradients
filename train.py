@@ -76,7 +76,7 @@ def main(args):
                                        verbose=args.verbose,
                                        desc=epoch_desc.format(epoch + 1))
         print(results['accuracies_after'])
-        all_results.add(results['accuracies_after'])
+        all_results.append(results['accuracies_after'])
 
         # Save best model
         if 'accuracies_after' in results:

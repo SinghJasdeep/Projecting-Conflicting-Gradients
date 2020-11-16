@@ -7,7 +7,6 @@ import logging
 
 from pcgrad import PCGrad
 
-
 from torchmeta.utils.data import BatchMetaDataLoader
 
 from maml.datasets import get_benchmark_by_name
@@ -79,7 +78,7 @@ def main(args):
                                        verbose=args.verbose,
                                        desc=epoch_desc.format(epoch + 1))
         print(results['accuracies_after'])
-        all_results.add(results['accuracies_after'])
+        all_results.append(results['accuracies_after'])
 
         # Save best model
         if 'accuracies_after' in results:
