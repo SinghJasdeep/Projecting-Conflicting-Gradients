@@ -77,6 +77,8 @@ def main(args):
                                        desc=epoch_desc.format(epoch + 1))
         print(results['accuracies_after'])
         all_results.append(results['accuracies_after'])
+        with open(os.path.join(folder, 'results.json'), 'w') as f:
+            json.dump(all_results, f, indent=2)
 
         # Save best model
         if 'accuracies_after' in results:
