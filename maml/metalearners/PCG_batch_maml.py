@@ -139,7 +139,7 @@ class ModelAgnosticMetaLearning_1(object):
                 outer_loss = self.loss_function(test_logits, test_targets)
                 results['outer_losses'][task_id] = outer_loss.item()
                 mean_outer_loss += outer_loss
-                mean_outer_losses.add(outer_loss)
+                mean_outer_losses.append(outer_loss)
 
             if is_classification_task:
                 results['accuracies_after'][task_id] = compute_accuracy(

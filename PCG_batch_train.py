@@ -10,7 +10,7 @@ from pcgrad import PCGrad
 from torchmeta.utils.data import BatchMetaDataLoader
 
 from maml.datasets import get_benchmark_by_name
-from maml.metalearners import ModelAgnosticMetaLearning
+from maml.metalearners import ModelAgnosticMetaLearning_1
 
 def main(args):
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
@@ -54,7 +54,7 @@ def main(args):
                                               pin_memory=True)
 
     meta_optimizer = PCGrad(torch.optim.Adam(benchmark.model.parameters(), lr=args.meta_lr))
-    metalearner = ModelAgnosticMetaLearning(benchmark.model,
+    metalearner = ModelAgnosticMetaLearning_1(benchmark.model,
                                             meta_optimizer,
                                             first_order=args.first_order,
                                             num_adaptation_steps=args.num_steps,
@@ -79,6 +79,8 @@ def main(args):
                                        desc=epoch_desc.format(epoch + 1))
         print(results['accuracies_after'])
         all_results.append(results['accuracies_after'])
+        with open(os.path.join(folder, 'results.json'), 'w') as f:
+            json.dump(all_results, f, indent=2)
 
         # Save best model
         if 'accuracies_after' in results:
@@ -147,11 +149,17 @@ if __name__ == '__main__':
         help='Learning rate for the meta-optimizer (optimization of the outer '
         'loss). The default optimizer is Adam (default: 1e-3).')
 
+
     # Misc
     parser.add_argument('--num-workers', type=int, default=1,
         help='Number of workers to use for data-loading (default: 1).')
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--use-cuda', action='store_true')
+
+    # PCGrad
+    parser.add_argument('--use_PCGrad', action='store_true',
+        help='Use the PCGrad optimizer')
+
 
     args = parser.parse_args()
 
