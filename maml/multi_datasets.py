@@ -9,8 +9,8 @@ from torchvision.transforms import ToTensor, Resize, Compose
 from maml.model import ModelConvOmniglot, ModelConvMiniImagenet, ModelMLPSinusoid
 from maml.utils import ToTensor1D
 
-Benchmark = namedtuple('Benchmark', 'meta_train_dataset meta_val_dataset '
-                                    'meta_test_dataset model loss_function')
+Benchmark = namedtuple('Benchmark', 'meta_train_datasets meta_val_datasets '
+                                    'meta_test_datasets model loss_function')
 
 def get_benchmark_by_name_1(name,
                           folder,
