@@ -5,10 +5,12 @@ import time
 import json
 import logging
 
+from pcgrad import PCGrad
+
 from torchmeta.utils.data import BatchMetaDataLoader
 
-from maml.datasets import get_benchmark_by_name
-from maml.metalearners import ModelAgnosticMetaLearning
+from maml.multi_datasets import get_benchmark_by_name_1
+from maml.metalearners import ModelAgnosticMetaLearning_2
 
 def main(args):
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
@@ -33,47 +35,62 @@ def main(args):
         logging.info('Saving configuration file in `{0}`'.format(
                      os.path.abspath(os.path.join(folder, 'config.json'))))
 
-    benchmark = get_benchmark_by_name(args.dataset,
+
+    benchmark = get_benchmark_by_name_1(args.datasets,
                                       args.folder,
                                       args.num_ways,
                                       args.num_shots,
                                       args.num_shots_test,
                                       hidden_size=args.hidden_size)
 
-    meta_train_dataloader = BatchMetaDataLoader(benchmark.meta_train_dataset,
+    meta_train_dataloaders = [BatchMetaDataLoader(meta_train_dataset,
                                                 batch_size=args.batch_size,
                                                 shuffle=True,
                                                 num_workers=args.num_workers,
-                                                pin_memory=True)
-    meta_val_dataloader = BatchMetaDataLoader(benchmark.meta_val_dataset,
+                                                pin_memory=True) for meta_train_dataset in benchmark.meta_train_datasets]
+    meta_val_dataloaders = [BatchMetaDataLoader(meta_val_dataset,
                                               batch_size=args.batch_size,
                                               shuffle=True,
                                               num_workers=args.num_workers,
-                                              pin_memory=True)
+                                              pin_memory=True) for meta_val_dataset in benchmark.meta_val_datasets]
+    
+    if args.use_PCGrad: 
+        meta_optimizer = PCGrad(torch.optim.Adam(benchmark.model.parameters(), lr=args.meta_lr))
+    else: 
+        meta_optimizer = torch.optim.Adam(benchmark.model.parameters(), lr=args.meta_lr)
 
-    meta_optimizer = torch.optim.Adam(benchmark.model.parameters(), lr=args.meta_lr)
-    metalearner = ModelAgnosticMetaLearning(benchmark.model,
+    metalearner = ModelAgnosticMetaLearning_2(benchmark.model,
                                             meta_optimizer,
                                             first_order=args.first_order,
                                             num_adaptation_steps=args.num_steps,
                                             step_size=args.step_size,
                                             loss_function=benchmark.loss_function,
-                                            device=device)
+                                            device=device,
+                                            PCGrad=args.use_PCGrad)
 
     best_value = None
 
     # Training loop
     epoch_desc = 'Epoch {{0: <{0}d}}'.format(1 + int(math.log10(args.num_epochs)))
+    all_results = {}
+    for dataset in args.datasets:
+        all_results[dataset] = []
+
     for epoch in range(args.num_epochs):
-        metalearner.train(meta_train_dataloader,
+        metalearner.train(meta_train_dataloaders,
                           max_batches=args.num_batches,
                           verbose=args.verbose,
                           desc='Training',
                           leave=False)
-        results = metalearner.evaluate(meta_val_dataloader,
-                                       max_batches=args.num_batches,
-                                       verbose=args.verbose,
-                                       desc=epoch_desc.format(epoch + 1))
+        for i, meta_val_dataloader in enumerate(meta_val_dataloaders):
+            results = metalearner.evaluate(meta_val_dataloader,
+                                           max_batches=args.num_batches,
+                                           verbose=args.verbose,
+                                           desc=epoch_desc.format(epoch + 1))
+            print(args.datasets[i], results['accuracies_after'])
+            all_results[args.datasets[i]].append(results['accuracies_after'])
+            with open(os.path.join(folder, 'results.json'), 'w') as f:
+                json.dump(all_results, f, indent=2)
 
         # Save best model
         if 'accuracies_after' in results:
@@ -89,6 +106,7 @@ def main(args):
         if save_model and (args.output_folder is not None):
             with open(args.model_path, 'wb') as f:
                 torch.save(benchmark.model.state_dict(), f)
+    print(all_results)
 
     if hasattr(benchmark.meta_train_dataset, 'close'):
         benchmark.meta_train_dataset.close()
@@ -103,9 +121,9 @@ if __name__ == '__main__':
     # General
     parser.add_argument('folder', type=str,
         help='Path to the folder the data is downloaded to.')
-    parser.add_argument('--dataset', type=str,
-        choices=['sinusoid', 'omniglot', 'miniimagenet'], default='omniglot',
-        help='Name of the dataset (default: omniglot).')
+    parser.add_argument('--datasets', type=str, nargs='+',
+        choices=[ 'omniglot', 'doublemnist', 'triplemnist', 'miniimagenet',  'cub'], default=['miniimagenet', 'cub'],
+        help='Name of the dataset (default: miniimagenet, cub).')
     parser.add_argument('--output-folder', type=str, default=None,
         help='Path to the output folder to save the model.')
     parser.add_argument('--num-ways', type=int, default=5,
@@ -141,11 +159,17 @@ if __name__ == '__main__':
         help='Learning rate for the meta-optimizer (optimization of the outer '
         'loss). The default optimizer is Adam (default: 1e-3).')
 
+
     # Misc
     parser.add_argument('--num-workers', type=int, default=1,
         help='Number of workers to use for data-loading (default: 1).')
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--use-cuda', action='store_true')
+
+    # PCGrad
+    parser.add_argument('--use_PCGrad', action='store_true',
+        help='Use the PCGrad optimizer')
+
 
     args = parser.parse_args()
 
