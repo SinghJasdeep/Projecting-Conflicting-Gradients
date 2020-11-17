@@ -151,8 +151,8 @@ def get_benchmark_by_name_1(name,
       else:
           raise NotImplementedError('Unknown dataset `{0}`.'.format(name))
 
-    return Benchmark(meta_train_dataset=meta_train_datasets,
-                     meta_val_dataset=meta_val_datasets,
-                     meta_test_dataset=meta_test_datasets,
+    return Benchmark(meta_train_datasets=meta_train_datasets,
+                     meta_val_datasets=meta_val_datasets,
+                     meta_test_datasets=meta_test_datasets,
                      model=model,
                      loss_function=loss_function)
