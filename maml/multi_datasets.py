@@ -66,7 +66,7 @@ def get_benchmark_by_name_1(name,
                                         num_classes_per_task=num_ways,
                                         meta_train=True,
                                         dataset_transform=dataset_transform,
-                                        download=False))
+                                        download=True))
           meta_val_datasets.append(CUB(folder,
                                       transform=transform,
                                       target_transform=Categorical(num_ways),
