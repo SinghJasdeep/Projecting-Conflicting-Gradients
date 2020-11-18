@@ -35,7 +35,7 @@ def get_benchmark_by_name_1(name,
 
     for nm in name: 
       if nm == 'miniimagenet':
-          transform = Compose([Resize(84), ToTensor()])
+          transform = Compose([Resize((84,84)), ToTensor()])
 
           meta_train_datasets.append(MiniImagenet(folder,
                                             transform=transform,
@@ -58,7 +58,7 @@ def get_benchmark_by_name_1(name,
                                            dataset_transform=dataset_transform))
 
       elif nm == 'cub':
-          transform = Compose([Resize(84), ToTensor()])
+          transform = Compose([Resize((84,84)), ToTensor()])
 
           meta_train_datasets.append(CUB(folder,
                                         transform=transform,
@@ -81,7 +81,7 @@ def get_benchmark_by_name_1(name,
                                        dataset_transform=dataset_transform))
       elif nm == 'omniglot':
         class_augmentations = [Rotation([90, 180, 270])]
-        transform = Compose([Resize(64), ToTensor()])
+        transform = Compose([Resize((64,64)), ToTensor()])
 
         meta_train_datasets.append(Omniglot(folder,
                                       transform=transform,
@@ -105,7 +105,7 @@ def get_benchmark_by_name_1(name,
                                      meta_test=True,
                                      dataset_transform=dataset_transform))
       elif nm == 'doublemnist':
-          transform = Compose([Resize(64), ToTensor()])
+          transform = Compose([Resize((64,64)), ToTensor()])
 
           meta_train_datasets.append(DoubleMNIST(folder,
                                         transform=transform,
@@ -127,7 +127,7 @@ def get_benchmark_by_name_1(name,
                                        meta_test=True,
                                        dataset_transform=dataset_transform))    
       elif nm == 'triplemnist':
-          transform = Compose([Resize(64), ToTensor()])
+          transform = Compose([Resize((64,64)), ToTensor()])
 
           meta_train_datasets.append(TripleMNIST(folder,
                                         transform=transform,
