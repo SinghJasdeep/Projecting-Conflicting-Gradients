@@ -1,7 +1,7 @@
 import torch.nn.functional as F
 
 from collections import namedtuple
-from torchmeta.datasets import Omniglot, MiniImagenet
+from torchmeta.datasets import Omniglot, MiniImagenet, CUB
 from torchmeta.toy import Sinusoid
 from torchmeta.transforms import ClassSplitter, Categorical, Rotation
 from torchvision.transforms import ToTensor, Resize, Compose
@@ -89,6 +89,32 @@ def get_benchmark_by_name(name,
                                         meta_val=True,
                                         dataset_transform=dataset_transform)
         meta_test_dataset = MiniImagenet(folder,
+                                         transform=transform,
+                                         target_transform=Categorical(num_ways),
+                                         num_classes_per_task=num_ways,
+                                         meta_test=True,
+                                         dataset_transform=dataset_transform)
+
+        model = ModelConvMiniImagenet(num_ways, hidden_size=hidden_size)
+        loss_function = F.cross_entropy
+
+    elif name == 'cub':
+        transform = Compose([Resize((84,84)), ToTensor()])
+
+        meta_train_dataset = CUB(folder,
+                                          transform=transform,
+                                          target_transform=Categorical(num_ways),
+                                          num_classes_per_task=num_ways,
+                                          meta_train=True,
+                                          dataset_transform=dataset_transform,
+                                          download=True)
+        meta_val_dataset = CUB(folder,
+                                        transform=transform,
+                                        target_transform=Categorical(num_ways),
+                                        num_classes_per_task=num_ways,
+                                        meta_val=True,
+                                        dataset_transform=dataset_transform)
+        meta_test_dataset = CUB(folder,
                                          transform=transform,
                                          target_transform=Categorical(num_ways),
                                          num_classes_per_task=num_ways,
